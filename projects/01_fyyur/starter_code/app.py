@@ -14,6 +14,7 @@ from flask_wtf import Form
 from forms import *
 
 #my edit
+from .models import Venue, Artist, Show
 from datetime import datetime
 from flask_migrate import Migrate
 import sys
@@ -30,66 +31,66 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db) # my addition
 # TODO: connect to a local postgresql database
 
-#----------------------------------------------------------------------------#
-# Models.
-#----------------------------------------------------------------------------#
+# #----------------------------------------------------------------------------#
+# # Models.
+# #----------------------------------------------------------------------------#
 
-class Venue(db.Model):
-    __tablename__ = 'venue'
+# class Venue(db.Model):
+#     __tablename__ = 'venue'
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    address = db.Column(db.String(120))
-    phone = db.Column(db.String(120))
+#     id = db.Column(db.Integer, primary_key=True)
+#     name = db.Column(db.String)
+#     city = db.Column(db.String(120))
+#     state = db.Column(db.String(120))
+#     address = db.Column(db.String(120))
+#     phone = db.Column(db.String(120))
 
-    image_link = db.Column(db.String(500))
-    facebook_link = db.Column(db.String(120))
+#     image_link = db.Column(db.String(500))
+#     facebook_link = db.Column(db.String(120))
     
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
-    genres = db.Column(db.String(120))
-    website_link = db.Column(db.String(120))
-    seeking_talent = db.Column(db.Boolean(), nullable=False)    
-    seeking_description = db.Column(db.String(250))
-    shows = db.relationship('Show', backref='venue', lazy=True)
+#     # TODO: implement any missing fields, as a database migration using Flask-Migrate
+#     genres = db.Column(db.String(120))
+#     website_link = db.Column(db.String(120))
+#     seeking_talent = db.Column(db.Boolean(), nullable=False)    
+#     seeking_description = db.Column(db.String(250))
+#     shows = db.relationship('Show', backref='venue', lazy=True)
 
-    def __repr__(self):
-      return f'<Venue {self.id} {self.name}>'
+#     def __repr__(self):
+#       return f'<Venue {self.id} {self.name}>'
 
-class Artist(db.Model):
-    __tablename__ = 'artist'
+# class Artist(db.Model):
+#     __tablename__ = 'artist'
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    phone = db.Column(db.String(120))
-    genres = db.Column(db.String(120))
-    image_link = db.Column(db.String(500))
-    facebook_link = db.Column(db.String(120))
+#     id = db.Column(db.Integer, primary_key=True)
+#     name = db.Column(db.String)
+#     city = db.Column(db.String(120))
+#     state = db.Column(db.String(120))
+#     phone = db.Column(db.String(120))
+#     genres = db.Column(db.String(120))
+#     image_link = db.Column(db.String(500))
+#     facebook_link = db.Column(db.String(120))
 
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
-    website_link = db.Column(db.String(120))
-    seeking_venue = db.Column(db.Boolean(), nullable=False)
-    seeking_description = db.Column(db.String(250)) 
-    shows = db.relationship('Show', backref='artist', lazy=True)
+#     # TODO: implement any missing fields, as a database migration using Flask-Migrate
+#     website_link = db.Column(db.String(120))
+#     seeking_venue = db.Column(db.Boolean(), nullable=False)
+#     seeking_description = db.Column(db.String(250)) 
+#     shows = db.relationship('Show', backref='artist', lazy=True)
 
-    def __repr__(self):
-      return f'<Artist {self.id} {self.name}>'
+#     def __repr__(self):
+#       return f'<Artist {self.id} {self.name}>'
 
 
-# TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
-class Show(db.Model):
-    __tablename__ = 'shows'
+# # TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
+# class Show(db.Model):
+#     __tablename__ = 'shows'
     
-    id = db.Column(db.Integer, primary_key=True)
-    venue_id = db.Column(db.Integer, db.ForeignKey('venue.id'), nullable=False)
-    artist_id = db.Column(db.Integer, db.ForeignKey('artist.id'), nullable=False) 
-    start_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+#     id = db.Column(db.Integer, primary_key=True)
+#     venue_id = db.Column(db.Integer, db.ForeignKey('venue.id'), nullable=False)
+#     artist_id = db.Column(db.Integer, db.ForeignKey('artist.id'), nullable=False) 
+#     start_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
-    def __repr__(self):
-      return f'<Show {self.id} {self.start_time}>'
+#     def __repr__(self):
+#       return f'<Show {self.id} {self.start_time}>'
 
 
 #----------------------------------------------------------------------------#
@@ -345,6 +346,7 @@ def create_venue_submission():
   # recieving data from the request
   try:
     #creating a Venue instance
+    print("request.form['genres'] is " + (request.form["genres"]) + str(type(request.form["genres"])))
     ven = Venue(
     name=request.form['name'],
     city=request.form['city'],
@@ -361,7 +363,6 @@ def create_venue_submission():
     # worked just fine
     seeking_talent= True if request.form.get('seeking_talent') == 'y' else False,
     seeking_description=request.form['seeking_description'])
-    print("Here is ven.seeking_talent: " + str(ven.seeking_talent))
 
     #map the object venue to ad database row
     db.session.add(ven)
@@ -571,20 +572,41 @@ def show_artist(artist_id):
 @app.route('/artists/<int:artist_id>/edit', methods=['GET'])
 def edit_artist(artist_id):
   form = ArtistForm()
-  artist={
-    "id": 4,
-    "name": "Guns N Petals",
-    "genres": ["Rock n Roll"],
-    "city": "San Francisco",
-    "state": "CA",
-    "phone": "326-123-5000",
-    "website": "https://www.gunsnpetalsband.com",
-    "facebook_link": "https://www.facebook.com/GunsNPetals",
-    "seeking_venue": True,
-    "seeking_description": "Looking for shows to perform at in the San Francisco Bay Area!",
-    "image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80"
-  }
+  # artist={
+  #   "id": 4,
+  #   "name": "Guns N Petals",
+  #   "genres": ["Rock n Roll"],
+  #   "city": "San Francisco",
+  #   "state": "CA",
+  #   "phone": "326-123-5000",
+  #   "website": "https://www.gunsnpetalsband.com",
+  #   "facebook_link": "https://www.facebook.com/GunsNPetals",
+  #   "seeking_venue": True,
+  #   "seeking_description": "Looking for shows to perform at in the San Francisco Bay Area!",
+  #   "image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80"
+  # }
   # TODO: populate form with fields from artist with ID <artist_id>
+  
+  # My work start from the next line by grapping the specific row
+  # in table artist with id == artist
+  a = Artist.query.get(artist_id)
+  # Extracting data from our row object and mapping it to the
+  # appropriate data structure (dictionary)
+  artist={
+    "id": a.id,
+    "name": a.name,
+    "genres": a.genres,
+    "city": a.city,
+    "state": a.state,
+    "phone": a.phone,
+    "website": a.website_link,
+    "facebook_link": a.facebook_link,
+    "seeking_venue": a.seeking_venue,
+    "seeking_description": a.seeking_description,
+    "image_link": a.image_link,
+  }
+  # End of my Work
+
   return render_template('forms/edit_artist.html', form=form, artist=artist)
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
@@ -592,32 +614,95 @@ def edit_artist_submission(artist_id):
   # TODO: take values from the form submitted, and update existing
   # artist record with ID <artist_id> using the new attributes
 
+  # My work start from the next line by grapping the specific row
+  # in table venue with id == venue_id
+  a = Artist.query.get(artist_id)
+  a.name = request.form['name']
+  a.genres = request.form['genres']
+  a.city = request.form['city']
+  a.state = request.form['state']
+  a.phone = request.form['phone']
+  a.website_link = request.form['website_link']
+  a.facebook_link = request.form['facebook_link']
+  a.seeking_talent = True if request.form.get('seeking_talent') == 'y' else False
+  a.seeking_description = request.form['seeking_description']
+  a.image_link = request.form['image_link']
+  
+  # next committing the changes to our database and close the connection
+  db.session.commit()
+  db.session.close()
+  # End of my work
+
   return redirect(url_for('show_artist', artist_id=artist_id))
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
   form = VenueForm()
-  venue={
-    "id": 1,
-    "name": "The Musical Hop",
-    "genres": ["Jazz", "Reggae", "Swing", "Classical", "Folk"],
-    "address": "1015 Folsom Street",
-    "city": "San Francisco",
-    "state": "CA",
-    "phone": "123-123-1234",
-    "website": "https://www.themusicalhop.com",
-    "facebook_link": "https://www.facebook.com/TheMusicalHop",
-    "seeking_talent": True,
-    "seeking_description": "We are on the lookout for a local artist to play every two weeks. Please call us.",
-    "image_link": "https://images.unsplash.com/photo-1543900694-133f37abaaa5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60"
-  }
+  # venue={
+  #   "id": 1,
+  #   "name": "The Musical Hop",
+  #   "genres": ["Jazz", "Reggae", "Swing", "Classical", "Folk"],
+  #   "address": "1015 Folsom Street",
+  #   "city": "San Francisco",
+  #   "state": "CA",
+  #   "phone": "123-123-1234",
+  #   "website": "https://www.themusicalhop.com",
+  #   "facebook_link": "https://www.facebook.com/TheMusicalHop",
+  #   "seeking_talent": True,
+  #   "seeking_description": "We are on the lookout for a local artist to play every two weeks. Please call us.",
+  #   "image_link": "https://images.unsplash.com/photo-1543900694-133f37abaaa5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60"
+  # }
   # TODO: populate form with values from venue with ID <venue_id>
+  
+  # My work start from the next line by grapping the specific row
+  # in table venue with id == venue_id
+  v = Venue.query.get(venue_id)
+  # Extracting data from our row object and mapping it to the
+  # appropriate data structure (dictionary)
+  venue={
+    "id": v.id,
+    "name": v.name,
+    "genres": v.genres,
+    "address": v.address,
+    "city": v.city,
+    "state": v.state,
+    "phone": v.phone,
+    "website": v.website_link,
+    "facebook_link": v.facebook_link,
+    "seeking_talent": v.seeking_talent,
+    "seeking_description": v.seeking_description,
+    "image_link": v.image_link,
+  }
+  # End of my Work
+  
+
   return render_template('forms/edit_venue.html', form=form, venue=venue)
 
 @app.route('/venues/<int:venue_id>/edit', methods=['POST'])
 def edit_venue_submission(venue_id):
   # TODO: take values from the form submitted, and update existing
   # venue record with ID <venue_id> using the new attributes
+
+  # My work start from the next line by grapping the specific row
+  # in table venue with id == venue_id
+  v = Venue.query.get(venue_id)
+  v.name = request.form['name']
+  v.genres = request.form['genres']
+  v.address = request.form['address']
+  v.city = request.form['city']
+  v.state = request.form['state']
+  v.phone = request.form['phone']
+  v.website_link = request.form['website_link']
+  v.facebook_link = request.form['facebook_link']
+  v.seeking_talent = True if request.form.get('seeking_talent') == 'y' else False
+  v.seeking_description = request.form['seeking_description']
+  v.image_link = request.form['image_link']
+  
+  # next committing the changes to our database and close the connection
+  db.session.commit()
+  db.session.close()
+  # End of my work
+  
   return redirect(url_for('show_venue', venue_id=venue_id))
 
 #  Create Artist
