@@ -34,62 +34,7 @@ migrate = Migrate(app, db) # my addition
 # # Models.
 # #----------------------------------------------------------------------------#
 
-# class Venue(db.Model):
-#     __tablename__ = 'venue'
-
-#     id = db.Column(db.Integer, primary_key=True)
-#     name = db.Column(db.String)
-#     city = db.Column(db.String(120))
-#     state = db.Column(db.String(120))
-#     address = db.Column(db.String(120))
-#     phone = db.Column(db.String(120))
-
-#     image_link = db.Column(db.String(500))
-#     facebook_link = db.Column(db.String(120))
-    
-#     # TODO: implement any missing fields, as a database migration using Flask-Migrate
-#     genres = db.Column(db.String(120))
-#     website_link = db.Column(db.String(120))
-#     seeking_talent = db.Column(db.Boolean(), nullable=False)    
-#     seeking_description = db.Column(db.String(250))
-#     shows = db.relationship('Show', backref='venue', lazy=True)
-
-#     def __repr__(self):
-#       return f'<Venue {self.id} {self.name}>'
-
-# class Artist(db.Model):
-#     __tablename__ = 'artist'
-
-#     id = db.Column(db.Integer, primary_key=True)
-#     name = db.Column(db.String)
-#     city = db.Column(db.String(120))
-#     state = db.Column(db.String(120))
-#     phone = db.Column(db.String(120))
-#     genres = db.Column(db.String(120))
-#     image_link = db.Column(db.String(500))
-#     facebook_link = db.Column(db.String(120))
-
-#     # TODO: implement any missing fields, as a database migration using Flask-Migrate
-#     website_link = db.Column(db.String(120))
-#     seeking_venue = db.Column(db.Boolean(), nullable=False)
-#     seeking_description = db.Column(db.String(250)) 
-#     shows = db.relationship('Show', backref='artist', lazy=True)
-
-#     def __repr__(self):
-#       return f'<Artist {self.id} {self.name}>'
-
-
-# # TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
-# class Show(db.Model):
-#     __tablename__ = 'shows'
-    
-#     id = db.Column(db.Integer, primary_key=True)
-#     venue_id = db.Column(db.Integer, db.ForeignKey('venue.id'), nullable=False)
-#     artist_id = db.Column(db.Integer, db.ForeignKey('artist.id'), nullable=False) 
-#     start_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-
-#     def __repr__(self):
-#       return f'<Show {self.id} {self.start_time}>'
+# See models.py
 
 
 #----------------------------------------------------------------------------#
@@ -345,7 +290,6 @@ def create_venue_submission():
   # recieving data from the request
   try:
     #creating a Venue instance
-    print("request.form['genres'] is " + (request.form["genres"]) + str(type(request.form["genres"])))
     ven = Venue(
     name=request.form['name'],
     city=request.form['city'],
@@ -361,9 +305,10 @@ def create_venue_submission():
     # figure it out so the following line is a temporary solution and it
     # worked just fine
     seeking_talent= True if request.form.get('seeking_talent') == 'y' else False,
-    seeking_description=request.form['seeking_description'])
+    seeking_description=request.form['seeking_description']
+    )
 
-    #map the object venue to ad database row
+    #map the object ven to ad database row
     db.session.add(ven)
     db.session.commit()
     # on successful db insert, flash success
@@ -615,24 +560,30 @@ def edit_artist_submission(artist_id):
 
   # My work start from the next line by grapping the specific row
   # in table venue with id == venue_id
-  a = Artist.query.get(artist_id)
-  a.name = request.form['name']
-  a.genres = request.form['genres']
-  a.city = request.form['city']
-  a.state = request.form['state']
-  a.phone = request.form['phone']
-  a.website_link = request.form['website_link']
-  a.facebook_link = request.form['facebook_link']
-  a.seeking_talent = True if request.form.get('seeking_talent') == 'y' else False
-  a.seeking_description = request.form['seeking_description']
-  a.image_link = request.form['image_link']
+  try:
+    a = Artist.query.get(artist_id)
+    a.name = request.form['name']
+    a.genres = request.form['genres']
+    a.city = request.form['city']
+    a.state = request.form['state']
+    a.phone = request.form['phone']
+    a.website_link = request.form['website_link']
+    a.facebook_link = request.form['facebook_link']
+    a.seeking_talent = True if request.form.get('seeking_talent') == 'y' else False
+    a.seeking_description = request.form['seeking_description']
+    a.image_link = request.form['image_link']
   
-  # next committing the changes to our database and close the connection
-  db.session.commit()
-  db.session.close()
-  # End of my work
+    # next committing the changes to our database and close the connection
+    db.session.commit()
 
-  return redirect(url_for('show_artist', artist_id=artist_id))
+  except:
+    db.session.rollback()
+    print(sys.exc_info())
+  finally:
+    db.session.close()
+    return redirect(url_for('show_artist', artist_id=artist_id))
+
+  # End of my work
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
@@ -684,25 +635,33 @@ def edit_venue_submission(venue_id):
 
   # My work start from the next line by grapping the specific row
   # in table venue with id == venue_id
-  v = Venue.query.get(venue_id)
-  v.name = request.form['name']
-  v.genres = request.form['genres']
-  v.address = request.form['address']
-  v.city = request.form['city']
-  v.state = request.form['state']
-  v.phone = request.form['phone']
-  v.website_link = request.form['website_link']
-  v.facebook_link = request.form['facebook_link']
-  v.seeking_talent = True if request.form.get('seeking_talent') == 'y' else False
-  v.seeking_description = request.form['seeking_description']
-  v.image_link = request.form['image_link']
+  try:
+    v = Venue.query.get(venue_id)
+    v.name = request.form['name']
+    v.genres = request.form['genres']
+    v.address = request.form['address']
+    v.city = request.form['city']
+    v.state = request.form['state']
+    v.phone = request.form['phone']
+    v.website_link = request.form['website_link']
+    v.facebook_link = request.form['facebook_link']
+    v.seeking_talent = True if request.form.get('seeking_talent') == 'y' else False
+    v.seeking_description = request.form['seeking_description']
+    v.image_link = request.form['image_link']
   
-  # next committing the changes to our database and close the connection
-  db.session.commit()
-  db.session.close()
+    # next committing the changes to our database
+    db.session.commit()
+
+  except:
+    db.session.rollback()
+    # After a full success with submission I intend to implement a flash for this form
+    # flash('An error occured. Venue ' + request.gorm['name'] + ' could not be updated')
+    print(sys.exc_info())
+  finally:
+    db.session.close()
+    return redirect(url_for('show_venue', venue_id=venue_id))
+
   # End of my work
-  
-  return redirect(url_for('show_venue', venue_id=venue_id))
 
 #  Create Artist
 #  ----------------------------------------------------------------
